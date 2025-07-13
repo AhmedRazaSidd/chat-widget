@@ -7,11 +7,11 @@ interface ChatBubbleProps {
 }
 const ChatWindow: React.FC<ChatBubbleProps> = ({ onClose }) => {
   return (
-    <>
+    <div className="flex flex-col h-screen bg-white">
       <Header />
       <Messages />
       <ChatInput />
-    </>
+    </div>
   );
 };
 

@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
   </head>
-  <body>
+  <body style="background-color: black">
     <!-- 🔧 Configuration Script -->
     <script>
       window.ChatWidgetConfig = {
         apiKey: "abc123dummyapikey", // Replace with real key in prod
-
         // 🔓 Lifecycle Events (optional)
         onOpen: () => console.log("✅ Chatbot opened"),
         onClose: () => console.log("❌ Chatbot closed"),
@@ -26,6 +25,9 @@
     <script
       src="http://localhost:3000/widget.js"
       data-api-key="abc123dummyapikey"
+      data-bot-id="food-bot-123"
+      data-ai="gemini"
+      data-model="gemini-1.5-flash"
     ></script>
   </body>
 </html>

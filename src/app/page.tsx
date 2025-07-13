@@ -1,12 +1,24 @@
 "use client";
 import ChatBubble from "@/components/widget/ChatBubble";
 import ChatWindow from "@/components/widget/ChatWindow";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    const handleFetchConfig = () => {
+      const apiKey = searchParams.get("apiKey");
+      const botId = searchParams.get("botId");
+      const model = searchParams.get("model");
+
+      console.log("🔑 apiKey:", apiKey);
+      console.log("🤖 botId:", botId);
+      console.log("📦 model:", model);
+    };
+
     const handleMessage = (event: MessageEvent) => {
       if (typeof event.data !== "object" || event.data === null) return;
 
@@ -31,6 +43,8 @@ export default function Home() {
 
         case "chatbot-loaded":
           // console.log("🤖 Bot loaded");
+          handleFetchConfig();
+          // config
           break;
 
         case "user-message":
@@ -46,10 +60,19 @@ export default function Home() {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  useEffect(() => {
+    window.parent.postMessage(
+      {
+        type: "chatbot-loaded",
+      },
+      "*"
+    );
+  }, []);
+
   return (
-    <div className="bg-black">
+    <>
       {!open && <ChatBubble />}
       {open && <ChatWindow />}
-    </div>
+    </>
   );
 }

@@ -1,145 +1,187 @@
 (function () {
-  // ✅ 1. Get script config
+  // === Configuration and Initialization ===
   const currentScript = document.currentScript;
-  const apiKey = currentScript.getAttribute("data-api-key") || "demo-key";
-  const config = window.ChatWidgetConfig || {};
 
-  // ✅ 2. Build iframe URL
+  const authConfig = {
+    apiKey: currentScript?.getAttribute("data-api-key"),
+    botId: currentScript?.getAttribute("data-bot-id"),
+    ai: currentScript?.getAttribute("data-ai"),
+    model: currentScript?.getAttribute("data-model"),
+  };
+
+  const externalConfig = window.ChatWidgetConfig || {};
+
+  // Merge external config with script config (script > window override)
+  const config = { ...externalConfig, ...authConfig };
+
+  // === Validate required keys dynamically ===
+  const requiredKeys = ["apiKey", "botId", "ai", "model"];
+
+  const missingKeys = requiredKeys.filter((key) => {
+    return !authConfig[key]; // checks for "", null, undefined, 0 => all treated as missing
+  });
+
+  if (missingKeys.length > 0) {
+    console.log(authConfig);
+
+    console.warn(
+      `❌ Chat Widget: Missing required key(s): ${missingKeys.join(
+        ", "
+      )}. Widget not loaded.`
+    );
+    return;
+  }
+
+  // === Build Chatbot URL ===
   const chatbotURL = `http://localhost:3000/?apiKey=${encodeURIComponent(
-    apiKey
+    config.apiKey
+  )}&botId=${encodeURIComponent(config.botId)}&model=${encodeURIComponent(
+    config.model || ""
   )}`;
 
-  // ✅ 3. Create chatbot iframe
+  // === Create iframe ===
   const iframe = document.createElement("iframe");
   iframe.src = chatbotURL;
   iframe.allow = "clipboard-write";
 
   Object.assign(iframe.style, {
     position: "fixed",
-    bottom: "20px",
-    right: "20px",
-    width: "60px",
-    height: "60px",
+    bottom: "25px",
+    right: "25px",
+    width: "120px",
+    height: "120px",
     borderRadius: "50%",
+    overflow: "hidden",
     border: "none",
     zIndex: "9999",
-    transition: "all 0.3s ease-in-out",
+    cursor: "pointer",
+    transition: "all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)",
   });
 
   document.body.appendChild(iframe);
 
-  let isExpanded = false;
-
-  // ✅ 4. Apply dynamic styles
-  const applyStyles = (styles = {}) => {
-    for (const [key, value] of Object.entries(styles)) {
-      iframe.style[key] = value;
-    }
-  };
-
-  // ✅ 5. Expand widget
-  const expand = () => {
-    applyStyles({
-      width: "420px",
-      height: "540px",
-      borderRadius: "16px",
-      bottom: "25px",
-      right: "25px",
-    });
-    isExpanded = true;
-
-    // 🔥 Callback
-    if (typeof config.onOpen === "function") config.onOpen();
-
-    // 📩 Notify iframe
-    iframe.contentWindow?.postMessage({ type: "expand-chatbot" }, "*");
-  };
-
-  // ✅ 6. Collapse widget
-  const collapse = () => {
-    applyStyles({
-      width: "60px",
-      height: "60px",
-      borderRadius: "50%",
-      bottom: "20px",
-      right: "20px",
-    });
-    isExpanded = false;
-
-    // 🔥 Callback
-    if (typeof config.onClose === "function") config.onClose();
-
-    // 📩 Notify iframe
-    iframe.contentWindow?.postMessage({ type: "collapse-chatbot" }, "*");
-  };
-
-  // ✅ 7. Invisible overlay to detect click
+  // === Create Overlay ===
   const overlay = document.createElement("div");
   Object.assign(overlay.style, {
     position: "fixed",
-    bottom: "20px",
-    right: "20px",
-    width: "60px",
-    height: "60px",
+    bottom: "25px",
+    right: "25px",
+    width: "120px",
+    height: "120px",
     zIndex: "10000",
     cursor: "pointer",
   });
 
   document.body.appendChild(overlay);
 
-  overlay.addEventListener("click", () => {
-    expand();
-    overlay.style.display = "none";
-  });
+  // === State & Helpers ===
+  let isExpanded = false;
 
-  // ✅ 8. Message listener (from iframe)
-  window.addEventListener("message", (event) => {
-    const data = event.data;
-    if (typeof data !== "object" || data === null || !("type" in data)) return;
+  const applyStyles = (styles = {}) => {
+    Object.entries(styles).forEach(([key, value]) => {
+      iframe.style[key] = value;
+    });
+  };
+
+  const expandChat = () => {
+    const isMobile = window.innerWidth < 500;
+    if (isMobile) {
+      fullscreenChat();
+      return;
+    }
+
+    applyStyles({
+      width: "420px",
+      height: "540px",
+      bottom: "25px",
+      right: "25px",
+      borderRadius: "10px",
+    });
+    isExpanded = true;
+    overlay.style.display = "none";
+    iframe.contentWindow?.postMessage({ type: "expand-chatbot" }, "*");
+  };
+
+  const collapseChat = () => {
+    applyStyles({
+      width: "120px",
+      height: "120px",
+      bottom: "25px",
+      right: "25px",
+      borderRadius: "50%",
+    });
+    isExpanded = false;
+    overlay.style.display = "block";
+    iframe.contentWindow?.postMessage({ type: "collapse-chatbot" }, "*");
+  };
+
+  const fullscreenChat = () => {
+    applyStyles({
+      width: "100%",
+      height: "100%",
+      bottom: "0",
+      right: "0",
+      borderRadius: "0",
+    });
+    isExpanded = true;
+    overlay.style.display = "none";
+    iframe.contentWindow?.postMessage({ type: "fullscreen-chatbot" }, "*");
+  };
+
+  // === Chatbot Loaded ===
+  const chatbotloaded = () => {
+    iframe.contentWindow?.postMessage({ type: "chatbot-loaded" }, "*");
+  };
+
+  // === Click Handler ===
+  overlay.addEventListener("click", expandChat);
+
+  // === PostMessage Event Listener ===
+  const handleMessage = (event) => {
+    const { data } = event;
+    if (typeof data !== "object" || !data?.type) return;
 
     const { type, payload } = data;
 
     switch (type) {
-      case "collapse-chatbot":
-        collapse();
-        overlay.style.display = "block";
+      case "expand-chatbot":
+        expandChat();
         break;
 
-      case "expand-chatbot":
-        expand();
-        overlay.style.display = "none";
+      case "collapse-chatbot":
+        collapseChat();
+        break;
+
+      case "fullscreen-chatbot":
+        fullscreenChat();
         break;
 
       case "chatbot-loaded":
-        if (typeof config.onLoad === "function") {
-          config.onLoad({ botId: "abc123", version: "1.0.0" });
-        }
+        chatbotloaded();
+        config.onLoad?.({ botId: config.botId, version: "1.0.0" });
         break;
 
       case "user-message":
-        if (typeof config.onMessage === "function" && payload?.message) {
-          config.onMessage(payload.message);
-        }
+        if (payload?.message) config.onMessage?.(payload.message);
         break;
 
       case "custom-command":
         if (payload?.style) applyStyles(payload.style);
-        if (payload?.expand) {
-          expand();
-          overlay.style.display = "none";
-        }
-        if (payload?.collapse) {
-          collapse();
-          overlay.style.display = "block";
-        }
+        if (payload?.expand) expandChat();
+        if (payload?.collapse) collapseChat();
         break;
 
       default:
-        // Silent fail for unknown types
         break;
     }
+  };
+
+  window.addEventListener("message", handleMessage);
+
+  // === Cleanup on Unload (optional best practice) ===
+  window.addEventListener("beforeunload", () => {
+    window.removeEventListener("message", handleMessage);
   });
 
-  // ✅ Debug
   console.log("✅ Chat widget loaded successfully");
 })();
