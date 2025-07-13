@@ -1,12 +1,12 @@
 import { Moment } from "moment";
 
 export interface Message {
-  id: string; // Unique ID (uuid)
-  role: "user" | "bot" | "agent" | "system";
-  content: string;
-  timestamp: Moment;
-  type?: "text" | "image" | "file" | "video" | "button" | "card";
-  status?: "sent" | "received" | "seen" | "error";
+  id?: string; // Unique message ID
+  role: "user" | "bot" | "assistant" | "agent" | "system"; // Message sender role
+  content: string; // Message content (text or description)
+  timestamp?: Moment; // JavaScript Date object (easier to serialize/store)
+  type?: "text" | "image" | "file" | "video" | "button" | "card"; // Optional message type
+  status?: "sent" | "received" | "seen" | "error"; // Optional delivery status
 }
 
 export interface ChatConfig {

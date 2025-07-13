@@ -1,6 +1,7 @@
 "use client";
 import ChatBubble from "@/components/widget/ChatBubble";
 import ChatWindow from "@/components/widget/ChatWindow";
+import { useChatStore } from "@/hooks/useChatStore";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -8,15 +9,21 @@ export default function Home() {
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
+  const { setConfig } = useChatStore();
+
   useEffect(() => {
     const handleFetchConfig = () => {
-      const apiKey = searchParams.get("apiKey");
-      const botId = searchParams.get("botId");
-      const model = searchParams.get("model");
+      const apiKey = searchParams.get("apiKey") || "";
+      const botId = searchParams.get("botId") || "";
+      const ai = searchParams.get("ai") || "";
+      const model = searchParams.get("model") || "";
 
-      console.log("🔑 apiKey:", apiKey);
-      console.log("🤖 botId:", botId);
-      console.log("📦 model:", model);
+      setConfig({
+        apiKey,
+        botId,
+        ai,
+        model,
+      });
     };
 
     const handleMessage = (event: MessageEvent) => {

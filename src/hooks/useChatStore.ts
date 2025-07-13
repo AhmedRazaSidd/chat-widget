@@ -6,9 +6,10 @@ import { create } from "zustand";
 // Define the message type (optional but good practice)
 
 type ChatStore = {
-  messages: Message[];
-  sendMessage: (message: Message) => void;
   config: ChatConfig;
+  setConfig: (config: ChatConfig) => void;
+  messages: Message[];
+  sendMessage: (message: Message) => Promise<void>;
 };
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -18,10 +19,19 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     ai: null,
     model: null,
   },
+  setConfig: (config: ChatConfig) => {
+    set({ config });
+  },
   messages: [...demoMessages],
 
   sendMessage: async (message) => {
-    // const response = axios.post(message)
+    const config = get().config;
+    const response = await axios.post(`${config.ai}`, {
+      config,
+      message,
+    });
+
+    console.log(response);
 
     set((state) => ({
       messages: [...state.messages, message],

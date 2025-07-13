@@ -35,9 +35,9 @@
   // === Build Chatbot URL ===
   const chatbotURL = `http://localhost:3000/?apiKey=${encodeURIComponent(
     config.apiKey
-  )}&botId=${encodeURIComponent(config.botId)}&model=${encodeURIComponent(
-    config.model || ""
-  )}`;
+  )}&ai=${encodeURIComponent(authConfig.ai)}&botId=${encodeURIComponent(
+    config.botId
+  )}&model=${encodeURIComponent(config.model || "")}`;
 
   // === Create iframe ===
   const iframe = document.createElement("iframe");

@@ -12,7 +12,6 @@ const ChatInput = () => {
     if (!trimmed) return;
 
     sendMessage({
-      id: crypto.randomUUID(),
       role: "user",
       content: trimmed,
       timestamp: moment(),
